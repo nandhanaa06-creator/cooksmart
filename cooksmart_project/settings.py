@@ -140,3 +140,6 @@ MEDIA_ROOT = BASE_DIR / "media"
 # DEFAULT PRIMARY KEY
 # --------------------------------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+CSRF_TRUSTED_ORIGINS = [
+    "https://cooksmart.onrender.com",
+]
