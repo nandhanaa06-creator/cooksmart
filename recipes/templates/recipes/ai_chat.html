@@ -1,0 +1,116 @@
+{% extends "recipes/base.html" %}
+{% block content %}
+
+<div class="container my-5" style="max-width: 700px">
+
+    <h4 class="fw-bold text-success text-center mb-3">
+        🤖 CookSmart AI Assistant
+    </h4>
+
+    <p class="text-muted text-center mb-4">
+        Ask anything about recipes, ingredients, or cooking tips
+    </p>
+
+    <!-- CHAT BOX -->
+    <div id="chatBox" class="border rounded p-3 mb-3"
+         style="height: 350px; overflow-y: auto; background:#fafafa;">
+    </div>
+
+    <!-- INPUT -->
+    <form id="chatForm">
+        {% csrf_token %}
+        <div class="input-group">
+            <input
+                type="text"
+                id="userMessage"
+                class="form-control"
+                placeholder="Type your message..."
+                autocomplete="off"
+                required
+            >
+            <button class="btn btn-success px-4">
+                Send
+            </button>
+        </div>
+    </form>
+
+</div>
+
+<style>
+.chat-user {
+    text-align: right;
+    margin-bottom: 10px;
+}
+
+.chat-user span {
+    background: #198754;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 16px;
+    display: inline-block;
+    max-width: 80%;
+}
+
+.chat-ai {
+    text-align: left;
+    margin-bottom: 10px;
+}
+
+.chat-ai span {
+    background: #e9ecef;
+    padding: 8px 12px;
+    border-radius: 16px;
+    display: inline-block;
+    max-width: 80%;
+}
+</style>
+
+<script>
+const chatBox = document.getElementById("chatBox");
+const form = document.getElementById("chatForm");
+const input = document.getElementById("userMessage");
+
+form.addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const message = input.value.trim();
+    if (!message) return;
+
+    addMessage(message, "user");
+    input.value = "";
+
+    fetch("{% url 'ai_chat_api' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({ message })
+    })
+    .then(res => res.json())
+    .then(data => {
+        addMessage(data.reply, "ai");
+    });
+});
+
+function addMessage(text, sender) {
+    const div = document.createElement("div");
+    div.className = sender === "user" ? "chat-user" : "chat-ai";
+    div.innerHTML = `<span>${text}</span>`;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    document.cookie.split(';').forEach(cookie => {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        }
+    });
+    return cookieValue;
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'recipes/base.html' %}
+{% block content %}
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+
+            <div class="card p-4 shadow-sm">
+                <h4 class="text-success fw-bold mb-3">
+                    ✏️ Edit Your Review
+                </h4>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label">Rating</label>
+                        <select name="rating" class="form-select" required>
+                            {% for i in "12345" %}
+                                <option value="{{ forloop.counter }}"
+                                    {% if review.rating == forloop.counter %}selected{% endif %}>
+                                    {{ forloop.counter }} Star
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Review</label>
+                        <textarea name="review"
+                                  class="form-control"
+                                  rows="3"
+                                  required>{{ review.comment }}</textarea>
+                    </div>
+
+                    <button class="btn btn-success">
+                        Update Review
+                    </button>
+
+                    <a href="{% url 'recipe_detail' review.recipe.id %}"
+                       class="btn btn-secondary ms-2">
+                        Cancel
+                    </a>
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

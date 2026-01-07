@@ -1,0 +1,592 @@
+{% extends 'recipes/base.html' %}
+{% block content %}
+
+<div class="container recipe-page my-4">
+
+  <!-- MEDIA -->
+  {% if recipe.video %}
+  <div class="media-box mb-4 shadow rounded-4 overflow-hidden">
+    <video controls class="w-100">
+      <source src="{{ recipe.video.url }}">
+    </video>
+  </div>
+  {% elif recipe.image %}
+  <div class="media-box mb-4 shadow rounded-4 overflow-hidden">
+    <img src="{{ recipe.image.url }}" class="w-100 recipe-img" alt="{{ recipe.title }}">
+  </div>
+  {% endif %}
+
+  <div class="row g-4">
+
+    <!-- LEFT COLUMN -->
+    <div class="col-lg-8 col-md-12">
+
+      <!-- TITLE -->
+      <div class="card p-4 border-0 shadow-sm mb-4">
+        <h1 class="text-success fw-bold">{{ recipe.title }}</h1>
+        <div class="d-flex gap-3">
+          <span class="badge bg-warning text-dark">
+            ⭐ {{ avg_rating|default:"0"|floatformat:1 }}
+          </span>
+          <span class="text-muted small">
+            By <strong>{{ recipe.user.username }}</strong> ·
+            {{ recipe.created_at|date:"F d, Y" }}
+          </span>
+        </div>
+      </div>
+
+      <!-- DESCRIPTION -->
+      {% if recipe.description %}
+      <div class="card p-4 border-0 shadow-sm mb-4">
+        <h5 class="fw-bold text-success">📖 Description</h5>
+        <p class="text-muted mb-0">{{ recipe.description }}</p>
+      </div>
+      {% endif %}
+
+      <!-- INSTRUCTIONS -->
+      <div class="card p-4 border-0 shadow-sm mb-4">
+        <h5 class="fw-bold text-success">👩‍🍳 Instructions</h5>
+        {% for step in recipe.instructions.splitlines %}
+        <div class="d-flex gap-3 mb-3">
+          <div class="step-circle">{{ forloop.counter }}</div>
+          <div>{{ step }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- REVIEW FORM -->
+      <div class="card p-4 border-0 shadow-sm mb-4">
+        {% if user.is_authenticated %}
+          {% if user_rating %}
+            <h5 class="fw-bold text-success mb-2">
+              ✅ You already reviewed this recipe
+            </h5>
+            <p class="text-muted mb-0">
+              You can edit or delete your review below.
+            </p>
+          {% else %}
+            <h5 class="fw-bold text-success mb-3">⭐ Leave a Review</h5>
+
+            <form method="post" action="{% url 'add_review' recipe.id %}">
+              {% csrf_token %}
+
+              <div class="rating-stars mb-3">
+                {% for i in "12345" %}
+                  <span class="star" data-value="{{ forloop.counter }}">★</span>
+                {% endfor %}
+              </div>
+
+              <input type="hidden" name="rating" id="ratingInput" value="0">
+
+              <textarea
+                name="review"
+                class="form-control mb-3"
+                rows="3"
+                placeholder="Share your experience..."
+                required></textarea>
+
+              <button class="btn btn-success">Submit Review</button>
+            </form>
+          {% endif %}
+        {% else %}
+          <p class="text-muted">
+            Please <a href="{% url 'login' %}">login</a> to leave a review.
+          </p>
+        {% endif %}
+      </div>
+
+      <!-- ALL REVIEWS -->
+      <div class="card p-4 border-0 shadow-sm">
+        <h5 class="fw-bold text-success">
+          💬 Reviews ({{ recipe.reviews.count }})
+        </h5>
+
+        {% for review in recipe.reviews.all %}
+        <div class="border-bottom pb-3 mb-3 d-flex justify-content-between">
+
+          <div>
+            <strong>{{ review.user.username }}</strong>
+            <span class="text-warning ms-2">
+              {% for i in "12345" %}
+                {% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}
+              {% endfor %}
+            </span>
+            <p class="mb-1 text-muted">{{ review.comment }}</p>
+            <small class="text-muted">
+              {{ review.created_at|date:"M d, Y" }}
+            </small>
+          </div>
+
+          {% if user == review.user %}
+          <!-- 3 DOT MENU -->
+          <div class="dropdown">
+            <button class="btn btn-sm btn-light" data-bs-toggle="dropdown">⋮</button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li>
+                <a class="dropdown-item" href="{% url 'edit_review' review.id %}">
+                  Edit
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item text-danger"
+                   href="{% url 'delete_review' review.id %}">
+                  Delete
+                </a>
+              </li>
+            </ul>
+          </div>
+          {% endif %}
+
+        </div>
+        {% empty %}
+        <p class="text-muted">No reviews yet.</p>
+        {% endfor %}
+      </div>
+
+    </div>
+
+   <!-- RIGHT SIDEBAR -->
+<div class="col-lg-4">
+  <div class="card border-0 shadow-sm sticky-top" style="top:20px">
+     
+    <div class="card-header bg-success text-white fw-bold">
+      🧺 Ingredients
+    </div>
+    <!-- SERVINGS SCALER -->
+<div class="mb-3">
+  <label class="form-label fw-semibold small mb-1">
+    Servings
+  </label>
+
+  <div class="input-group">
+    <button class="btn btn-outline-success" onclick="changeServings(-1)">−</button>
+
+    <input
+      type="number"
+      id="servingInput"
+      class="form-control text-center"
+      value="{{ recipe.servings|default:1 }}"
+      min="1"
+      readonly
+    />
+
+    <button class="btn btn-outline-success" onclick="changeServings(1)">+</button>
+  </div>
+
+  <small class="text-muted">
+    Ingredients will scale automatically
+  </small>
+</div>
+
+{% if user.is_authenticated %}
+  {% if profile.avoid_onion and "onion" in recipe.ingredients|lower %}
+    <div class="alert alert-warning py-2 small">
+      ⚠ Onion is avoided based on your taste profile
+    </div>
+  {% endif %}
+
+  {% if profile.low_salt and "salt" in recipe.ingredients|lower %}
+    <div class="alert alert-warning py-2 small">
+      ⚠ Salt amount is capped due to low-salt preference
+    </div>
+  {% endif %}
+{% endif %}
+
+    <div class="card-body">
+
+      <div class="ingredient-tags mb-3" id="ingredientList">
+  {% for item in recipe.ingredients.splitlines %}
+    <span class="ingredient-tag ingredient-item">
+      {{ item }}
+    </span>
+  {% endfor %}
+</div>
+
+
+      {% if user.is_authenticated %}
+      <button
+        id="favBtn"
+        class="btn w-100 {% if is_favorite %}btn-danger{% else %}btn-outline-danger{% endif %}"
+        onclick="toggleFavoriteDetail({{ recipe.id }})">
+        {% if is_favorite %}
+          ❤️ Remove from Favorites
+        {% else %}
+          🤍 Add to Favorites
+        {% endif %}
+      </button>
+      {% endif %}
+
+      <!-- CONVERT TO DIET -->
+      <button
+        class="btn btn-outline-success w-100 mt-2"
+        data-bs-toggle="modal"
+        data-bs-target="#dietModal">
+        🥦 Convert to Diet
+      </button>
+
+      <!-- NUTRITION INSIGHT -->
+      <button
+        id="nutritionBtn"
+        class="btn btn-outline-success w-100 mt-2"
+        onclick="nutritionWithAI()">
+
+        <span id="nutritionBtnText">🥗 Nutrition Insight</span>
+
+        <span
+          id="nutritionSpinner"
+          class="spinner-border spinner-border-sm ms-2 d-none"
+          role="status"
+          aria-hidden="true">
+        </span>
+      </button>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ===============================
+     DIET SELECT MODAL
+================================ -->
+<div class="modal fade" id="dietModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Convert Recipe</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <label class="fw-semibold mb-2">Choose Diet Type</label>
+        <select id="dietType" class="form-select">
+          <option value="vegan">Vegan</option>
+          <option value="keto">Keto</option>
+          <option value="healthy">Healthy</option>
+        </select>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+
+        <button
+          class="btn btn-success"
+          id="convertBtn"
+          onclick="convertRecipeWithAI()">
+
+          <span id="convertBtnText">Convert</span>
+
+          <span
+            id="convertSpinner"
+            class="spinner-border spinner-border-sm ms-2 d-none">
+          </span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ===============================
+     AI RESULT MODAL (SHARED)
+================================ -->
+<div class="modal fade" id="resultModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <!-- 🔥 DYNAMIC TITLE -->
+        <h5 class="modal-title" id="resultModalTitle">
+          AI Result
+        </h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- 🔹 GENERIC LOADING TEXT -->
+        <div
+          id="loadingText"
+          class="text-center text-muted d-none">
+          Processing, please wait...
+        </div>
+
+        <!-- 🔹 RESULT -->
+        <pre
+          id="dietResult"
+          class="d-none"
+          style="white-space: pre-wrap; font-family: inherit;">
+        </pre>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<style>
+.recipe-img{max-height:420px;object-fit:cover}
+.step-circle{
+  width:34px;height:34px;border-radius:50%;
+  background:#198754;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700
+}
+.ingredient-tag{
+  background:#e9f5ee;color:#198754;
+  padding:6px 12px;border-radius:20px;
+  margin:4px;display:inline-block;font-size:14px
+}
+.rating-stars{font-size:28px;cursor:pointer}
+.rating-stars .star{color:#ccc}
+.rating-stars .star.active{color:gold}
+</style>
+
+<script>
+function getCookie(name){
+  let v = null;
+  document.cookie.split(";").forEach(c => {
+    c = c.trim();
+    if (c.startsWith(name + "=")) {
+      v = decodeURIComponent(c.slice(name.length + 1));
+    }
+  });
+  return v;
+}
+
+/* ===============================
+   FAVORITE TOGGLE
+=============================== */
+function toggleFavoriteDetail(id){
+  fetch(`/recipe/${id}/toggle-favorite/`,{
+    method:"POST",
+    headers:{
+      "X-CSRFToken": getCookie("csrftoken"),
+      "X-Requested-With":"XMLHttpRequest"
+    }
+  })
+  .then(r => r.json())
+  .then(d => {
+    const b = document.getElementById("favBtn");
+    if(d.status === "added"){
+      b.className = "btn w-100 btn-danger";
+      b.innerText = "❤️ Remove from Favorites";
+    } else {
+      b.className = "btn w-100 btn-outline-danger";
+      b.innerText = "🤍 Add to Favorites";
+    }
+  })
+  .catch(err => {
+    alert("Favorite action failed");
+    console.error(err);
+  });
+}
+
+/* ===============================
+   STAR RATING
+=============================== */
+document.addEventListener("click", e => {
+  if(e.target.classList.contains("star")){
+    const stars = e.target.parentElement.querySelectorAll(".star");
+    const val = Number(e.target.dataset.value);
+    document.getElementById("ratingInput").value = val;
+    stars.forEach((s,i)=>s.classList.toggle("active", i < val));
+  }
+});
+
+/* ===============================
+   SERVINGS + INGREDIENT SCALING
+=============================== */
+let originalIngredients = [];
+let baseServings = {{ recipe.servings|default:1 }};
+let currentServings = baseServings;
+
+/* 🔹 Scaling rules (NO AI) */
+const ingredientScalingRules = {
+  onion: "{{ profile.avoid_onion|yesno:'blocked,soft' }}",
+  salt: "{{ profile.low_salt|yesno:'capped,linear' }}",
+  chili: "{{ profile.loves_spicy|yesno:'linear,capped' }}"
+};
+
+
+/* 🔹 Capture original ingredients */
+document.addEventListener("DOMContentLoaded", () => {
+  const items = document.querySelectorAll(".ingredient-item");
+  originalIngredients = Array.from(items).map(i => i.innerText);
+});
+
+function changeServings(delta) {
+  const input = document.getElementById("servingInput");
+  let newServings = parseInt(input.value) + delta;
+
+  if (newServings < 1) return;
+
+  input.value = newServings;
+  currentServings = newServings;
+
+  scaleIngredients();
+}
+
+function parseQuantity(qty) {
+  if (!isNaN(qty)) return parseFloat(qty);
+
+  if (qty.includes("/")) {
+    const [a, b] = qty.split("/").map(Number);
+    if (!isNaN(a) && !isNaN(b)) return a / b;
+  }
+  return null;
+}
+
+/* 🔹 Rule-based quantity scaling */
+function scaleQuantity(originalQty, factor, ingredient) {
+  const rule = ingredientScalingRules[ingredient] || "linear";
+
+  if (rule === "linear") {
+    return originalQty * factor;
+  }
+
+  if (rule === "soft") {
+    return Math.ceil(originalQty * (1 + (factor - 1) * 0.5));
+  }
+
+  if (rule === "capped") {
+    return Math.min(originalQty * factor, originalQty + 1);
+  }
+
+  return originalQty * factor;
+}
+
+function scaleIngredients() {
+  const factor = currentServings / baseServings;
+  const items = document.querySelectorAll(".ingredient-item");
+
+  items.forEach((el, index) => {
+    const text = originalIngredients[index];
+
+    const match = text.match(/^([\d/.]+)/);
+    if (!match) {
+      el.innerText = text;
+      return;
+    }
+
+    const originalQty = parseQuantity(match[1]);
+    if (originalQty === null) {
+      el.innerText = text;
+      return;
+    }
+
+    const ingredientName = text
+      .replace(match[1], "")
+      .trim()
+      .toLowerCase();
+
+    const newQty = scaleQuantity(originalQty, factor, ingredientName);
+
+    el.innerText = text.replace(
+      match[1],
+      newQty.toString()
+    );
+  });
+}
+
+/* ===============================
+   CONVERT RECIPE (AI)
+=============================== */
+function convertRecipeWithAI(){
+  const diet = document.getElementById("dietType").value;
+
+  bootstrap.Modal.getInstance(
+    document.getElementById("dietModal")
+  )?.hide();
+
+  const btn = document.getElementById("convertBtn");
+  const text = document.getElementById("convertBtnText");
+  const spin = document.getElementById("convertSpinner");
+  const loading = document.getElementById("loadingText");
+  const result = document.getElementById("dietResult");
+
+  btn.disabled = true;
+  text.innerText = "Converting...";
+  spin.classList.remove("d-none");
+  loading.classList.remove("d-none");
+  result.classList.add("d-none");
+
+  fetch(`/ai/convert-recipe/{{ recipe.id }}/`,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "X-CSRFToken": getCookie("csrftoken")
+    },
+    body: JSON.stringify({ diet_type: diet })
+  })
+  .then(r => r.json())
+  .then(d => {
+    loading.classList.add("d-none");
+    result.innerText = d.result;
+    result.classList.remove("d-none");
+
+    new bootstrap.Modal(
+      document.getElementById("resultModal")
+    ).show();
+  })
+  .finally(() => {
+    btn.disabled = false;
+    text.innerText = "Convert";
+    spin.classList.add("d-none");
+  });
+}
+
+/* ===============================
+   NUTRITION AI
+=============================== */
+function nutritionWithAI() {
+  const btn = document.getElementById("nutritionBtn");
+  const text = document.getElementById("nutritionBtnText");
+  const spinner = document.getElementById("nutritionSpinner");
+
+  const title = document.getElementById("resultModalTitle");
+  const loading = document.getElementById("loadingText");
+  const result = document.getElementById("dietResult");
+
+  btn.disabled = true;
+  text.innerText = "Analyzing...";
+  spinner.classList.remove("d-none");
+
+  title.innerText = "Nutrition Insight";
+  loading.classList.remove("d-none");
+  result.classList.add("d-none");
+
+  fetch(`/ai/nutrition/{{ recipe.id }}/`, {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": "{{ csrf_token }}"
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    loading.classList.add("d-none");
+    result.innerText = data.result || "No nutrition data available";
+    result.classList.remove("d-none");
+
+    new bootstrap.Modal(
+      document.getElementById("resultModal")
+    ).show();
+  })
+  .finally(() => {
+    btn.disabled = false;
+    text.innerText = "🥗 Nutrition Insight";
+    spinner.classList.add("d-none");
+  });
+}
+</script>
+
+
+
+
+
+
+
+{% endblock %}

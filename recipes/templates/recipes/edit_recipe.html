@@ -1,0 +1,25 @@
+{% extends 'recipes/base.html' %}
+{% block content %}
+
+<h4 class="fw-bold text-success mb-4">✏️ Edit Recipe</h4>
+
+<form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
+    {% csrf_token %}
+
+    <input class="form-control mb-3"
+           name="title"
+           value="{{ recipe.title }}">
+
+    <textarea class="form-control mb-3"
+              name="ingredients">{{ recipe.ingredients }}</textarea>
+
+    <textarea class="form-control mb-3"
+              name="instructions">{{ recipe.instructions }}</textarea>
+
+    <input type="file" name="image" class="form-control mb-3">
+    <input type="file" name="video" class="form-control mb-3">
+
+    <button class="btn btn-success">Update Recipe</button>
+</form>
+
+{% endblock %}

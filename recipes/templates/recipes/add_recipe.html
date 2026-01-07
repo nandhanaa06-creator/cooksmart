@@ -1,0 +1,496 @@
+{% extends 'recipes/base.html' %} {% block content %}
+
+<div class="container mt-4 mb-5">
+  <div class="card shadow-sm p-4 rounded-4">
+    <h4 class="text-center fw-bold mb-4">Share Your Recipe</h4>
+
+    <!-- STEP INDICATOR -->
+    <div class="step-indicator mb-3">
+      <div class="step-circle active">1</div>
+      <div class="step-line"></div>
+      <div class="step-circle">2</div>
+      <div class="step-line"></div>
+      <div class="step-circle">3</div>
+      <div class="step-line"></div>
+      <div class="step-circle">4</div>
+    </div>
+
+    <div class="text-center small text-muted mb-4">
+      <span class="me-4">Details</span>
+      <span class="me-4">Ingredients</span>
+      <span class="me-4">Steps</span>
+      <span>Media</span>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- STEP 1 : DETAILS (IMAGE HERE) -->
+      <div class="step-content active">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Recipe Title</label>
+          <input type="text" name="title" class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Description</label>
+          <textarea
+            name="description"
+            class="form-control"
+            rows="2"
+            required
+          ></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Category</label>
+          <select name="category" class="form-select" required>
+            <option value="">Select</option>
+            <option>Breakfast</option>
+            <option>Lunch</option>
+            <option>Dinner</option>
+            <option>Snacks</option>
+            <option>Dessert</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Cook Time (minutes)</label>
+            <input
+              type="number"
+              name="cook_time"
+              class="form-control"
+              required
+            />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-semibold">Servings</label>
+            <input
+              type="number"
+              name="servings"
+              class="form-control"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Difficulty</label>
+          <select name="difficulty" class="form-select" required>
+            <option>Easy</option>
+            <option selected>Medium</option>
+            <option>Hard</option>
+          </select>
+        </div>
+
+        <!-- IMAGE FIELD (ONLY HERE) -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold">
+            Recipe Image <span class="text-muted">(optional)</span>
+          </label>
+          <input
+            type="file"
+            name="image"
+            class="form-control"
+            accept="image/*"
+          />
+        </div>
+      </div>
+
+      <!-- STEP 2 : INGREDIENTS -->
+<div class="step-content">
+  <label class="form-label fw-semibold mb-2">Ingredients</label>
+
+  <div id="ingredients-container">
+    <div class="ingredient-row d-flex gap-2 mb-2">
+      <input
+        type="text"
+        name="ingredient_name[]"
+        class="form-control ingredient-name"
+        placeholder="Ingredient (e.g. Egg)"
+        required
+      />
+      <input
+        type="text"
+        name="ingredient_qty[]"
+        class="form-control ingredient-qty"
+        placeholder="Quantity (e.g. 2, 0.5, 1/2)"
+        required
+      />
+      <button
+        type="button"
+        class="btn btn-outline-danger"
+        onclick="removeIngredient(this)"
+      >
+        ✕
+      </button>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    class="btn btn-outline-success btn-sm mt-2"
+    onclick="addIngredient()"
+  >
+    ➕ Add Ingredient
+  </button>
+
+  <!-- FINAL INGREDIENT TEXT (USED BY DJANGO) -->
+  <input type="hidden" name="ingredients" id="ingredientsFinal" />
+</div>
+
+
+      <!-- STEP 3 : INSTRUCTIONS -->
+      <div class="step-content">
+        <label class="form-label fw-semibold">Cooking Steps</label>
+
+        <div id="steps-container">
+          <div class="step-item d-flex align-items-center gap-2 mb-2">
+            <span class="step-label">Step 1</span>
+            <input
+              type="text"
+              name="instructions[]"
+              class="form-control step-input"
+              required
+            />
+            <button
+              type="button"
+              class="btn btn-outline-danger btn-sm"
+              onclick="removeStep(this)"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mt-2">
+          <button
+            type="button"
+            class="btn btn-outline-success btn-sm"
+            onclick="addStep()"
+          >
+            ➕ Add Step
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            onclick="improveStepsWithAI()"
+          >
+            ✨ Modify with AI 
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 4 : MEDIA (VIDEO ONLY) -->
+      <div class="step-content">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">
+            Upload Video <span class="text-muted">(optional)</span>
+          </label>
+          <input
+            type="file"
+            name="video"
+            class="form-control"
+            accept="video/*"
+          />
+        </div>
+      </div>
+
+      <!-- BUTTONS -->
+      <div class="d-flex justify-content-between mt-4">
+        <button
+          type="button"
+          class="btn btn-secondary d-none"
+          id="backBtn"
+          onclick="prevStep()"
+        >
+          Back
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-success"
+          id="nextBtn"
+          onclick="nextStep()"
+        >
+          Next
+        </button>
+<form method="POST" onsubmit="return prepareIngredients()">
+
+        <button
+          type="submit"
+          class="btn btn-success d-none"
+          id="submitBtn"
+          onclick="prepareIngredients()"
+        >
+          Publish Recipe
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- STYLES -->
+<style>
+  .step-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .step-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #adb5bd;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+  .step-circle.active {
+    background: #000;
+  }
+  .step-circle.completed {
+    background: #198754;
+  }
+  .step-line {
+    width: 60px;
+    height: 3px;
+    background: #dee2e6;
+  }
+  .step-line.completed {
+    background: #198754;
+  }
+  .step-content {
+    display: none;
+  }
+  .step-content.active {
+    display: block;
+  }
+  .step-label {
+    min-width: 60px;
+    font-weight: 600;
+    color: #198754;
+  }
+</style>
+
+<script>
+/* ===============================
+   STEP NAVIGATION
+================================ */
+let currentStep = 0;
+let stepCount = 1;
+
+const steps = document.querySelectorAll(".step-content");
+const circles = document.querySelectorAll(".step-circle");
+const lines = document.querySelectorAll(".step-line");
+const backBtn = document.getElementById("backBtn");
+const nextBtn = document.getElementById("nextBtn");
+const submitBtn = document.getElementById("submitBtn");
+
+function showStep(i) {
+  if (i < 0 || i >= steps.length) return;
+
+  steps.forEach((s, idx) => s.classList.toggle("active", idx === i));
+
+  circles.forEach((c, idx) => {
+    c.classList.remove("active", "completed");
+    if (idx < i) c.classList.add("completed");
+    else if (idx === i) c.classList.add("active");
+  });
+
+  lines.forEach((l, idx) => l.classList.toggle("completed", idx < i));
+
+  backBtn.classList.toggle("d-none", i === 0);
+  nextBtn.classList.toggle("d-none", i === steps.length - 1);
+  submitBtn.classList.toggle("d-none", i !== steps.length - 1);
+}
+
+function nextStep() {
+  if (currentStep < steps.length - 1) {
+    currentStep++;
+    showStep(currentStep);
+  }
+}
+
+function prevStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    showStep(currentStep);
+  }
+}
+
+/* ===============================
+   INGREDIENTS
+================================ */
+function addIngredient() {
+  const div = document.createElement("div");
+  div.className = "ingredient-row d-flex gap-2 mb-2";
+
+  div.innerHTML = `
+    <input
+      type="text"
+      name="ingredient_name[]"
+      class="form-control ingredient-name"
+      placeholder="Ingredient (e.g. Egg)"
+      required
+    >
+    <input
+      type="text"
+      name="ingredient_qty[]"
+      class="form-control ingredient-qty"
+      placeholder="Quantity (e.g. 2, 0.5, 1/2 tsp)"
+      required
+    >
+    <button
+      type="button"
+      class="btn btn-outline-danger"
+      onclick="removeIngredient(this)">
+      ✕
+    </button>
+  `;
+
+  document.getElementById("ingredients-container").appendChild(div);
+}
+
+function removeIngredient(btn) {
+  btn.closest(".ingredient-row")?.remove();
+}
+
+/* 🔥 REQUIRED BEFORE FORM SUBMIT */
+function prepareIngredients() {
+  let final = [];
+
+  const names = document.getElementsByName("ingredient_name[]");
+  const qtys = document.getElementsByName("ingredient_qty[]");
+
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i].value.trim().toLowerCase();
+    const qty = qtys[i].value.trim();
+
+    if (!name || !qty) continue;
+
+    // FINAL FORMAT REQUIRED FOR SERVING SCALING
+    final.push(`${qty} ${name}`);
+  }
+
+  if (!final.length) {
+    alert("Please add at least one ingredient.");
+    return false;
+  }
+
+  document.getElementById("ingredientsFinal").value = final.join("\n");
+  return true;
+}
+
+/* ===============================
+   COOKING STEPS
+================================ */
+function addStep(value = "") {
+  stepCount++;
+
+  const d = document.createElement("div");
+  d.className = "step-item d-flex align-items-center gap-2 mb-2";
+  d.innerHTML = `
+    <span class="step-label">Step ${stepCount}</span>
+    <input
+      type="text"
+      name="instructions[]"
+      class="form-control step-input"
+      required
+      value="${value.replace(/"/g, "&quot;")}"
+    >
+    <button
+      type="button"
+      class="btn btn-outline-danger btn-sm"
+      onclick="removeStep(this)">
+      ✕
+    </button>
+  `;
+  document.getElementById("steps-container").appendChild(d);
+}
+
+function removeStep(btn) {
+  btn.closest(".step-item")?.remove();
+  renumberSteps();
+}
+
+function renumberSteps() {
+  const labels = document.querySelectorAll(".step-label");
+  stepCount = labels.length;
+
+  labels.forEach((label, idx) => {
+    label.textContent = `Step ${idx + 1}`;
+  });
+}
+
+/* ===============================
+   🤖 AI IMPROVE STEPS (OPTIONAL)
+================================ */
+function improveStepsWithAI() {
+  const inputs = document.querySelectorAll(
+    "#steps-container input[name='instructions[]']"
+  );
+
+  let stepsText = "";
+  inputs.forEach((input) => {
+    if (input.value.trim()) {
+      stepsText += input.value.trim() + "\n";
+    }
+  });
+
+  if (!stepsText.trim()) {
+    alert("Please add steps first.");
+    return;
+  }
+
+  fetch("/ai/improve-steps/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken"),
+    },
+    body: JSON.stringify({ steps: stepsText }),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (!data.steps) return;
+
+      const lines = data.steps
+        .split("\n")
+        .map((l) => l.trim())
+        .filter((l) => l.length > 3);
+
+      document.getElementById("steps-container").innerHTML = "";
+      stepCount = 0;
+
+      lines.forEach((line) => addStep(line));
+    })
+    .catch(() => alert("AI step improvement failed."));
+}
+
+/* ===============================
+   UTIL
+================================ */
+function getCookie(name) {
+  let cookieValue = null;
+  document.cookie.split(";").forEach((cookie) => {
+    cookie = cookie.trim();
+    if (cookie.startsWith(name + "=")) {
+      cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+    }
+  });
+  return cookieValue;
+}
+
+/* ===============================
+   INIT
+================================ */
+showStep(0);
+</script>
+
+
+{% endblock %}

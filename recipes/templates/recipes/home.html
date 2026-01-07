@@ -1,0 +1,166 @@
+{% extends 'recipes/base.html' %}
+{% block content %}
+
+<!-- ================= HERO ================= -->
+<div class="text-center mb-4">
+    <h2 class="fw-bold text-success">Welcome to CookSmart</h2>
+    <p class="text-muted small mt-2">
+        Smart ingredient-based recipe recommendations to cook better & reduce waste.
+    </p>
+
+    <a href="{% url 'ingredient_search' %}"
+       class="btn btn-success btn-sm px-4 mt-2 shadow-sm">
+        🔍 Search Recipes by Ingredients
+    </a>
+</div>
+
+<!-- ================= FEATURED RECIPES ================= -->
+{% if foods %}
+<h5 class="fw-bold text-success mb-3 text-center">
+    ⭐ Featured Dishes
+</h5>
+
+<div class="row g-3 mb-5">
+
+{% for food in foods %}
+<div class="col-lg-3 col-md-4 col-sm-6">
+
+    <div class="card recipe-card shadow-sm h-100 position-relative">
+
+        <!-- ❤️ FAVORITE -->
+        {% if user.is_authenticated %}
+        <button
+            class="fav-btn-home {% if food.is_favorited %}active{% endif %}"
+            onclick="toggleFavoriteHome(event, {{ food.id }})">
+            ♥
+        </button>
+        {% endif %}
+
+        <!-- 🔗 FULL CARD CLICK -->
+        <a href="{% url 'recipe_detail' food.id %}"
+           class="stretched-link"></a>
+
+        <!-- IMAGE -->
+        {% if food.image %}
+        <img src="{{ food.image.url }}"
+             class="card-img-top recipe-img">
+        {% else %}
+        <img src="/static/images/default-food.jpg"
+             class="card-img-top recipe-img">
+        {% endif %}
+
+        <!-- CATEGORY -->
+        {% if food.category %}
+        <span class="badge bg-success position-absolute top-0 start-0 m-2 small">
+            {{ food.category }}
+        </span>
+        {% endif %}
+
+        <!-- BODY -->
+        <div class="card-body p-2">
+
+            <small class="text-muted">
+                ⏱ {{ food.cook_time|default:"--" }} min
+            </small>
+
+            <h6 class="fw-bold text-truncate mt-1">
+                {{ food.title }}
+            </h6>
+
+            <p class="text-muted small mb-2">
+                {{ food.description|truncatechars:45 }}
+            </p>
+
+ <div class="text-warning small mb-2">
+    ⭐ {{ food.avg_rating|default:0|floatformat:1 }}
+</div>
+
+
+            <!-- SAFE VIEW BUTTON -->
+            <a href="{% url 'recipe_detail' food.id %}"
+               class="btn btn-outline-success btn-sm w-100"
+               onclick="event.stopPropagation();">
+                View Recipe
+            </a>
+
+        </div>
+    </div>
+
+</div>
+{% endfor %}
+
+</div>
+{% endif %}
+
+<!-- ================= STYLES ================= -->
+<style>
+.recipe-img{
+    height:160px;
+    object-fit:cover;
+}
+
+.fav-btn-home{
+    position:absolute;
+    top:8px;
+    right:8px;
+    z-index:10;
+    border:none;
+    background:#fff;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    font-size:16px;
+    color:#bbb;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:transform .15s ease;
+}
+
+.fav-btn-home:hover{
+    transform:scale(1.15);
+}
+
+.fav-btn-home.active{
+    color:#e63946;
+}
+</style>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+function toggleFavoriteHome(event, recipeId) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    fetch(`/recipe/${recipeId}/toggle-favorite/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "X-Requested-With": "XMLHttpRequest"
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        event.target.classList.toggle(
+            "active",
+            data.status === "added"
+        );
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    document.cookie.split(';').forEach(cookie => {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + '=')) {
+            cookieValue = decodeURIComponent(
+                cookie.substring(name.length + 1)
+            );
+        }
+    });
+    return cookieValue;
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,187 @@
+{% extends 'recipes/base.html' %}
+{% block content %}
+
+<h4 class="text-success fw-bold mb-3 text-center">
+    🍽️ Browse Recipes
+</h4>
+<div class="d-flex justify-content-center gap-2 mb-3">
+
+  <a href="{% url 'recipe_list' %}" class="btn btn-outline-success">
+  All Recipes
+</a>
+
+
+  <a href="{% url 'recipe_list' %}?type=quick" class="btn btn-success">
+  ⚡ Quick Recipes (≤ 15 mins)
+</a>
+
+
+</div>
+
+<!-- 🔍 SEARCH (COMPACT) -->
+<form method="get" class="mb-3">
+    <div class="input-group input-group-sm shadow-sm mx-auto"
+         style="max-width:520px;">
+        <input
+            type="text"
+            name="q"
+            value="{{ request.GET.q }}"
+            class="form-control"
+            placeholder="Search recipes..."
+        />
+        <button class="btn btn-success px-4">🔍</button>
+    </div>
+</form>
+
+<div class="row g-3">
+
+{% for recipe in recipes %}
+<div class="col-lg-3 col-md-4 col-sm-6">
+
+    <div class="card recipe-card shadow-sm position-relative h-100">
+
+        <!-- ❤️ FAVORITE -->
+        {% if user.is_authenticated %}
+        <button
+            class="fav-btn {% if recipe.is_favorited %}active{% endif %}"
+            data-id="{{ recipe.id }}"
+            onclick="toggleFavorite(this, event)">
+            {% if recipe.is_favorited %}❤{% else %}🤍{% endif %}
+        </button>
+        {% endif %}
+
+        <!-- 🔗 FULL CARD CLICK -->
+        <a href="{% url 'recipe_detail' recipe.id %}"
+           class="stretched-link"></a>
+
+        <!-- IMAGE -->
+        {% if recipe.image %}
+        <img src="{{ recipe.image.url }}"
+             class="card-img-top recipe-img">
+        {% endif %}
+
+        <div class="card-body p-2">
+
+            <!-- CATEGORY + TIME -->
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="badge bg-success small">
+                    {{ recipe.category }}
+                </span>
+                <small class="text-muted">
+                    ⏱ {{ recipe.cook_time|default:"--" }}m
+                </small>
+            </div>
+
+            <!-- TITLE -->
+            <h6 class="fw-bold mb-1 text-truncate">
+                {{ recipe.title }}
+            </h6>
+
+            <!-- DESCRIPTION -->
+            <p class="text-muted small mb-2">
+                {{ recipe.description|truncatechars:45 }}
+            </p>
+
+            <!-- ⭐ REAL RATING (NUMBER ONLY) -->
+<div class="text-warning small mb-2">
+    ⭐ {{ recipe.avg_rating|default:0|floatformat:1 }}
+</div>
+
+
+            <!-- VIEW BUTTON -->
+            <a href="{% url 'recipe_detail' recipe.id %}"
+               class="btn btn-outline-success btn-sm w-100"
+               onclick="event.stopPropagation();">
+                View
+            </a>
+
+        </div>
+    </div>
+</div>
+
+{% empty %}
+<p class="text-center text-muted mt-4">
+    No recipes found.
+</p>
+{% endfor %}
+
+</div>
+
+<!-- ================= STYLES ================= -->
+<style>
+.recipe-card {
+    border-radius: 6px;
+}
+
+.recipe-img {
+    height: 160px;
+    object-fit: cover;
+}
+
+.fav-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+    border: none;
+    background: rgba(255,255,255,0.95);
+    font-size: 18px;
+    cursor: pointer;
+    border-radius: 50%;
+    padding: 4px 7px;
+    transition: transform .15s ease;
+}
+
+.fav-btn:hover {
+    transform: scale(1.15);
+}
+
+.fav-btn.active {
+    color: #e63946;
+}
+</style>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+function toggleFavorite(btn, event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const recipeId = btn.dataset.id;
+    btn.disabled = true;
+
+    fetch(`/recipe/${recipeId}/toggle-favorite/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+            "X-Requested-With": "XMLHttpRequest"
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "added") {
+            btn.classList.add("active");
+            btn.innerHTML = "❤";
+        } else {
+            btn.classList.remove("active");
+            btn.innerHTML = "🤍";
+        }
+        btn.disabled = false;
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    document.cookie.split(';').forEach(cookie => {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + '=')) {
+            cookieValue = decodeURIComponent(
+                cookie.substring(name.length + 1)
+            );
+        }
+    });
+    return cookieValue;
+}
+</script>
+
+{% endblock %}

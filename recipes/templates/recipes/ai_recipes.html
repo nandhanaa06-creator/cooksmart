@@ -1,0 +1,37 @@
+{% extends 'recipes/base.html' %}
+{% block content %}
+
+<h3 class="text-success fw-bold text-center mb-4">
+    AI Recipe Assistant
+</h3>
+
+<form method="post" class="mb-4">
+    {% csrf_token %}
+
+    <div class="input-group mx-auto" style="max-width:600px;">
+        <input
+            type="text"
+            name="ingredients"
+            class="form-control"
+            placeholder="Enter ingredients (e.g. eggs, onion, tomato)"
+            required
+        >
+        <button class="btn btn-success px-4">
+            Generate
+        </button>
+    </div>
+</form>
+
+{% if answer %}
+<div class="card shadow-sm p-4 mx-auto" style="max-width:800px;">
+    <h6 class="fw-bold text-success mb-3">
+        AI Generated Recipe
+    </h6>
+
+    <div style="white-space: pre-wrap; line-height:1.6;">
+        {{ answer }}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

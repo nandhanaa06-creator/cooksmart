@@ -1,0 +1,84 @@
+{% extends 'recipes/base.html' %}
+{% block content %}
+
+<!-- ================= HEADER ================= -->
+<div class="text-center mb-4">
+    <h3 class="fw-bold text-success mb-1">📊 Admin Dashboard</h3>
+    <p class="text-muted small">
+        Monitor CookSmart activity and manage platform content
+    </p>
+</div>
+
+<!-- ================= DASHBOARD CARDS ================= -->
+<div class="row g-3 justify-content-center">
+
+    <!-- TOTAL USERS -->
+    <div class="col-lg-3 col-md-4 col-sm-6">
+        <a href="{% url 'user_list' %}" class="text-decoration-none">
+            <div class="card dashboard-card text-center h-100">
+
+                <div class="card-body">
+                    <div class="icon mb-2">👤</div>
+                    <h6 class="fw-semibold mb-1">Total Users</h6>
+                    <h3 class="text-success fw-bold mb-1">
+                        {{ total_users }}
+                    </h3>
+                    <p class="text-muted small mb-0">
+                        Registered users
+                    </p>
+                </div>
+
+            </div>
+        </a>
+    </div>
+
+    <!-- TOTAL RECIPES -->
+    <div class="col-lg-3 col-md-4 col-sm-6">
+        <a href="{% url 'admin_recipes' %}" class="text-decoration-none">
+            <div class="card dashboard-card text-center h-100">
+
+                <div class="card-body">
+                    <div class="icon mb-2">🍽️</div>
+                    <h6 class="fw-semibold mb-1">Total Recipes</h6>
+                    <h3 class="text-success fw-bold mb-1">
+                        {{ total_recipes }}
+                    </h3>
+                    <p class="text-muted small mb-0">
+                        Uploaded recipes
+                    </p>
+                </div>
+
+            </div>
+        </a>
+    </div>
+
+</div>
+
+<!-- ================= STYLES ================= -->
+<style>
+.dashboard-card {
+    border-radius: 14px;
+    border: none;
+    padding: 6px;
+    transition: all 0.25s ease;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+    background: #fff;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 14px 30px rgba(0,0,0,0.15);
+}
+
+.icon {
+    font-size: 36px;
+}
+
+@media (max-width: 576px) {
+    .icon {
+        font-size: 32px;
+    }
+}
+</style>
+
+{% endblock %}

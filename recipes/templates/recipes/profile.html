@@ -1,0 +1,233 @@
+{% extends "recipes/base.html" %}
+{% block content %}
+
+<div class="container my-5">
+
+  <!-- ================= HEADER ================= -->
+  <div class="profile-header mb-4">
+    <div class="d-flex align-items-center gap-4">
+
+      {% if profile.profile_image %}
+        <img src="{{ profile.profile_image.url }}" class="profile-img-lg">
+      {% else %}
+        <div class="profile-img-lg placeholder">
+          {{ request.user.username|slice:":1"|upper }}
+        </div>
+      {% endif %}
+
+      <div>
+        <h3 class="fw-bold mb-1">{{ request.user.username }}</h3>
+        <p class="text-muted mb-1">{{ request.user.email }}</p>
+        <span class="badge bg-light text-success">
+          Member since {{ request.user.date_joined|date:"M Y" }}
+        </span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= MAIN GRID ================= -->
+  <div class="row g-4">
+
+    <!-- ================= LEFT COLUMN ================= -->
+    <div class="col-lg-4">
+
+      <!-- STATS CARD -->
+      <div class="card pro-card mb-4">
+        <h6 class="card-title">📊 Activity Summary</h6>
+
+        <div class="stat-row">
+          <span>Total Recipes</span>
+          <strong>{{ recipe_count }}</strong>
+        </div>
+
+        <div class="stat-row">
+          <span>Favorites</span>
+<strong>{{ favorite_count }}</strong>
+        </div>
+      </div>
+
+      <!-- ACTIONS CARD -->
+      <div class="card pro-card">
+        <h6 class="card-title">⚙️ Account Actions</h6>
+
+        <a href="{% url 'edit_profile' %}" class="btn btn-outline-success w-100 mb-2">
+          ✏️ Edit Profile
+        </a>
+
+        <a href="{% url 'add_recipe' %}" class="btn btn-success w-100">
+          ➕ Add New Recipe
+        </a>
+      </div>
+
+    </div>
+
+    <!-- ================= RIGHT COLUMN ================= -->
+    <div class="col-lg-8">
+
+      <!-- ================= TASTE PREFERENCES ================= -->
+      <div class="card pro-card mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="fw-bold mb-0">
+            🍽 Personal Taste Profile
+          </h5>
+          <a href="{% url 'edit_preferences' %}" class="btn btn-sm btn-outline-success">
+            Edit
+          </a>
+        </div>
+
+        <p class="text-muted small mb-3">
+          Your taste profile directly influences ingredient scaling,
+          substitutions, and recipe suitability.
+        </p>
+
+        {% if profile.loves_spicy or profile.avoid_onion or profile.low_salt %}
+
+          <div class="taste-grid">
+
+            {% if profile.loves_spicy %}
+              <div class="taste-tile spicy">
+                🌶
+                <div>
+                  <strong>Loves Spicy</strong>
+                  <small>Spice levels won’t be reduced</small>
+                </div>
+              </div>
+            {% endif %}
+
+            {% if profile.avoid_onion %}
+              <div class="taste-tile onion">
+                🧅
+                <div>
+                  <strong>Avoids Onion</strong>
+                  <small>Onion will be capped or removed</small>
+                </div>
+              </div>
+            {% endif %}
+
+            {% if profile.low_salt %}
+              <div class="taste-tile salt">
+                🧂
+                <div>
+                  <strong>Low Salt</strong>
+                  <small>Salt quantity is limited</small>
+                </div>
+              </div>
+            {% endif %}
+
+          </div>
+
+        {% else %}
+
+          <div class="empty-state">
+            <p class="mb-2 fw-semibold">
+              No taste preferences set
+            </p>
+            <p class="text-muted small">
+              Set your preferences to personalize recipes automatically.
+            </p>
+            <a href="{% url 'edit_preferences' %}" class="btn btn-success btn-sm">
+              Set Preferences
+            </a>
+          </div>
+
+        {% endif %}
+      </div>
+
+      <!-- ================= FUTURE EXTENSION ================= -->
+     <div class="card pro-card">
+  <h6 class="card-title">🕒 Recent Activity</h6>
+  <p class="text-muted small mb-0">
+    You recently viewed 3 recipes and favorited 1 dish.
+  </p>
+</div>
+
+
+    </div>
+  </div>
+</div>
+
+<!-- ================= STYLES ================= -->
+<style>
+.profile-header {
+  background: linear-gradient(135deg, #e9f5ee, #ffffff);
+  padding: 30px;
+  border-radius: 20px;
+}
+
+.profile-img-lg {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.profile-img-lg.placeholder {
+  background: #198754;
+  color: #fff;
+  font-size: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pro-card {
+  border: none;
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.pro-card.muted {
+  background: #fafafa;
+}
+
+.card-title {
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px dashed #ddd;
+}
+
+.taste-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.taste-tile {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #f8faf9;
+  border-left: 6px solid;
+}
+
+.taste-tile strong {
+  display: block;
+}
+
+.taste-tile small {
+  color: #666;
+}
+
+.taste-tile.spicy { border-color: #e74c3c; }
+.taste-tile.onion { border-color: #f1c40f; }
+.taste-tile.salt  { border-color: #7f8c8d; }
+
+.empty-state {
+  text-align: center;
+  padding: 30px;
+  border: 2px dashed #ddd;
+  border-radius: 14px;
+}
+</style>
+
+{% endblock %}
