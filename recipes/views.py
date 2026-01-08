@@ -17,9 +17,11 @@ from django.db.models import Avg, Exists, OuterRef
 
 
 
+from django.db.models import Avg, Exists, OuterRef, Value, BooleanField
+
 def home(request):
     foods = Recipe.objects.filter(is_featured=True).annotate(
-        avg_rating=Avg('reviews__rating')  # ⭐ ADD THIS
+        avg_rating=Avg('reviews__rating')
     )
 
     if request.user.is_authenticated:
@@ -32,12 +34,13 @@ def home(request):
             )
         )
     else:
-        foods = foods.annotate(is_favorited=False)
+        foods = foods.annotate(
+            is_favorited=Value(False, output_field=BooleanField())
+        )
 
     return render(request, 'recipes/home.html', {
         "foods": foods
     })
-
 
 
 def signup(request):
@@ -251,16 +254,9 @@ def profile(request):
     })
 
 from django.http import JsonResponse
-
-
-from django.shortcuts import render, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.db.models import Avg
-from .models import Recipe
-
-from django.db.models import Exists, OuterRef
-from .models import Favorite
+from django.shortcuts import render
+from django.db.models import Avg, Exists, OuterRef, Value, BooleanField
+from .models import Recipe, Favorite
 
 
 def recipe_list(request):
@@ -285,11 +281,13 @@ def recipe_list(request):
             )
         )
     else:
-        recipes = recipes.annotate(is_favorited=False)
+        recipes = recipes.annotate(
+            is_favorited=Value(False, output_field=BooleanField())
+        )
 
     return render(request, "recipes/all_recipes.html", {
         "recipes": recipes,
-        "recipe_type": recipe_type,  # optional (for UI highlight)
+        "recipe_type": recipe_type,
     })
 
 

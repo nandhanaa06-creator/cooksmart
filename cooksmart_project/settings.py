@@ -19,7 +19,7 @@ SECRET_KEY = os.environ.get(
     "unsafe-dev-key"  # used only locally
 )
 
-DEBUG = os.environ.get("DEBUG", "False") == "True"
+DEBUG = True
 
 ALLOWED_HOSTS = os.environ.get(
     "ALLOWED_HOSTS",
